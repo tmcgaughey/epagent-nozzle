@@ -47,7 +47,7 @@ func (p *HeartbeatProcessor) ProcessHeartbeatEventsReceivedCount(e *events.Heart
 
 func (p *HeartbeatProcessor) ProcessHeartbeatEventsErrorCount(e *events.Heartbeat, origin string) *metrics.WMetric {
 	stat := "ops." + origin + ".heartbeats.eventsErrorCount"
-	metric := metrics.NewLongCounterMetric(stat, int64(e.GetErrorCount()))
+	metric := metrics.NewPerintervalCounterMetric(stat, int32(e.GetErrorCount()))
 
 	return metric
 }

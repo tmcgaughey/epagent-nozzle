@@ -11,7 +11,7 @@ This has been tested with APM 10.  An EPAgent 9.7.1 or greater is required for t
 Tested with Cloud Foundry 215
 
 ## Limitations
-Handles the [dropsonde-protocol events](https://github.com/cloudfoundry/dropsonde-protocol/tree/master/events) except for Log.
+Handles the [dropsonde-protocol events](https://github.com/cloudfoundry/dropsonde-protocol/tree/master/events) except for Log.  It also keeps the older Heartbeat event.
 By nature, the Firehose may generate a lot of metrics.  CA suggestes monitoring the load at the Enterprise Manager.
 If the nozzle is unable to keep up with the Firehose, a message is posted to the log and the metric `Firehose|slowConsumerAlert` will be non-zero.  Try scaling up the resources for the nozzle.
 
@@ -20,11 +20,11 @@ If the nozzle is unable to keep up with the Firehose, a message is posted to the
 
 
 # Installation Instructions
-Follow the steps below in prerequisites, installation, configuration, and usage to get up and running with nginx metrics today!
 
+## Prerequisites
+* A [RESTful CA APM EPAgent](https://wiki.ca.com/display/APMDEVOPS97/EPAgent+Overview) must be installed and the [HTTP port must be set](https://wiki.ca.com/display/APMDEVOPS97/Configure+the+EPAgent+RESTful+Interface).  The host and port running the EPAgent should be reachable from the epagent-monitor.
 
-* A user who has access to the Cloud Foundry Firehose configured in
-your manifest
+* You must have a user with access to the Cloud Foundry Firehose configured in your manifest
 
 ```
 properties:
@@ -39,148 +39,80 @@ properties:
         authorities: oauth.login,doppler.firehose
 ```
 
-* A CA APM EPAgent 
 * Golang installed and configured (see [here](https://golang.org/doc/install) for a tutorial on how to do this).
 * godep (see [here](https://github.com/tools/godep) for installation instructions).
 
+## Dependencies
+APM EPAgent 9.7.1+
+Golang 1.4.2 and 1.5 were tested
+Godep
+
+## Installation
 Once you've met all the prerequisites, you'll need to download the library and install the dependencies:
 
 ```
-mkdir -p $GOPATH/src/github.com/cloudcredo
-cd $GOPATH/src/github.com/cloudcredo
-git clone git@github.com:CloudCredo/graphite-nozzle.git
-cd graphite-nozzle
+go get github.com/tmcgaughey/epagent-nozzle
+cd $GOPATH/src/github.com/tmcgaughey/epagent-nozzle
 godep restore
 godep go build
 ```
 
-Finally, run the app:
-
-```
-./graphite-nozzle --help
-```
-
-
-
-
-
-
-
-## Prerequisites
-Ensure that nginx has the `--with-http_stub_status_module` flag by executing:
-
-    nginx -V
-The flag should appear in the output.
-
-Using the value of the `--conf-path` flag in the output, identify your active [nginx config file](http://nginx.org/en/docs/beginners_guide.html#conf_structure).
-
-A status URL location must be enabled under your server block.  An example is provided below:
-
-    
-      #add to existing server block
-   
-       location /nginx_status {
-           # activate stub_status module
-           stub_status on;
-   
-           # do not log status polling
-           access_log off;
-   
-           # restrict access to local only
-           allow 127.0.0.1;
-           deny all;
-      }
-If you test the URL, the expected output should look similar to the following:
-
-    Active connections: 1
-    server accepts handled requests
-    112 112 121
-    Reading: 0 Writing: 1 Waiting: 0
-
-A [RESTful CA APM EPAgent](https://wiki.ca.com/display/APMDEVOPS97/EPAgent+Overview) must be installed and the [HTTP port must be set](https://wiki.ca.com/display/APMDEVOPS97/Configure+the+EPAgent+RESTful+Interface).  The host and port running the EPAgent should be reachable from the epagent-monitor.
-
-## Dependencies
-APM EPAgent 9.7.1+
-
-## Installation
-Copy the **index.js** and **param.json** files to a convenient location.
-
-From there, execute:
-
-    npm install request
-
 ## Configuration
 Edit the **config/caapm-firehose-nozzle.json** file to designate:
 
- - The status URL specified in the prerequisites 
- - The interval at which to poll that URL  
- - The host and port the CA APM EPAgent is using for HTTP
-
-Here is a sample **param.json** file with nginx and the EPAgent both running on the localhost:
-
-    {
-    	"pollInterval" : 1000,
-    	"url" : "http://127.0.0.1/nginx_status",
-    	"epahost" : "127.0.0.1",
-    	"epaport" : 9191
-    }
-
+ - The [UAA API URL](https://github.com/cloudfoundry/uaa).  The status URL specified in the prerequisites 
+ - Credentials matching those in the manifest
+ - A doppler endpoint and subscription ID   
+ - The path to the EPAgent's REST interface
+ - A frequency to flush metrics to the EPAgent
+ 
 
 # Usage Instructions
 From the installation location, execute the fieldpack with:
 
-    node index
-Output will appear on the console, and hopefully the Introscope Investigator as well!
+```
+./epagent-nozzle
+```
+
+Output will appear on the console or log, and hopefully the Introscope Investigator as well!
+
 
 ## Metric description
-Reports the following metrics for requests:
 
-    nginx|hostname:Average Requests per Connection 
-    nginx|hostname:Requests per Interval
-
-plus the following metrics for connections: 
-
-    nginx|hostname|Connections:Active
-    nginx|hostname|Connections:Idle
-    nginx|hostname|Connections:Reading Request
-    nginx|hostname|Connections:Writing Response
-    nginx|hostname|Connections:Handled Connections
-    nginx|hostname|Connections:Dropped Connections
-    
-    
-## Metrics Overview
+Metrics are published under the path `Firehose`.
 
 Following is a brief overview of the metrics that epagent-nozzle will extract from the Firehose and send off to CA APM.
 
+The EPAgent Data Types referenced below can be found in the [EPAgent documentation](https://wiki.ca.com/display/APMDEVOPS98/Configure+the+EPAgent+RESTful+Interface#ConfiguretheEPAgentRESTfulInterface-Types)  
+
 ### CounterEvent
 
-CounterEvents represent the increment of a counter. epagent-nozzle will send these Long Counter metric. These metrics appear in the Investigator under `Firehose|ops|<counterName>`.
+CounterEvents represent the increment of a counter. epagent-nozzle will send these as LongCounter metric. These metrics appear in the Investigator under `Firehose|ops|<counterName>`.
 
 ### ContainerMetric
 
-CPU, RAM and disk usage metrics for app containers will be sent through to StatsD as a Gauge metric. Note that ContainerMetric Events will not appear on the Firehose by default (at the moment) so you'll need to run a separate app to generate these. There is a sample ContainerMetric-generating app included in the noaa repository [here](https://github.com/cloudfoundry/noaa/tree/master/container_metrics_sample). These metrics appear in the Graphite Web UI under `Graphite.stats.gauges.<statsdPrefix>.apps.<appID>.<containerMetric>.<instanceIndex>`.
+CPU, RAM and disk usage metrics for app containers will be sent through as LongCounter metrics. If generated, these metrics appear in the Investigator under `Firehose|apps|<appID>|<containerMetric>|<instanceIndex>`.
 
 ### Heartbeat
 
-Heartbeat Events indicate liveness of the emitter and provide counts of the number of Events processed by the emitter. These metrics get sent through to StatsD as Gauge metrics. graphite-nozzle also increments a Counter metric for each component whenever a Heartbeat Event is received. These metrics appear in the Graphite Web UI under `Graphite.stats.gauges.<statsdPrefix>.ops.<Origin>.heartbeats.*`.
+Heartbeat Events indicate liveness of the emitter and provide counts of the number of Events processed by the emitter. These metrics are processed as Perinterval metrics. These metrics appear in the Investigator under `Firehose|ops|<Origin>|heartbeats`.
 
 ### HTTPStartStop
 
-HTTP requests passing through the Cloud Foundry routers get recorded as HTTPStartStop Events. graphite-nozzle takes these events and extracts useful information, such as the response time and status code. These metrics are then sent through to StatsD. The following table gives an overview of the HTTP metrics graphite-nozzle handles:
+HTTP requests passing through the Cloud Foundry routers get recorded as HTTPStartStop Events. The following table gives an overview of the HTTP metrics:
 
-| Name | Description | StatsD Metric Type |
+| Name | Description | APM Metric Type |
 | ---- | ----------- | ------------------ |
-| HttpStartStopResponseTime | HTTP response times in milliseconds | Timer |
-| HttpStartStopStatusCodeCount | A count of each HTTP status code | Counter |
+| HttpStartStopResponseTime | HTTP response times in milliseconds | IntCounter |
+| HttpStartStopStatusCodeCount | A count of each HTTP status code | PerintervalCounter |
+| HttpStartStopErrorCount | A count of each HTTP error code | PerintervalCounter |
+| HttpStartStopHttpRequestCount | A count of each HTTP request | PerintervalCounter |
 
-
-For all HTTPStartStop Events, the hostname is extracted from the URI and used in the Metric name. `.` characters are also replaced with `_` characters. This means that, for example, HTTP requests to `http://api.mycf.com/v2/info` will be recorded under `http://api_mycf_com` in the Graphite web UI. This is to avoid polluting the UI with hundreds of endpoints.
-
-Also note that 2 HTTPStartStop Events are generated per HTTP request to an application running in Cloud Foundry. graphite-nozzle will only increment the StatusCode counter for the HttpStartStop Events where `PeerType` == `PeerType_Client`. This is in order to accurately graph the incoming HTTP requests.
+HTTP metrics are found under `Firehose|http`.  For all HTTPStartStop Events, the hostname is extracted from the URI and used in the Metric name, but not the path.  This is to prevent metric explosion.
 
 ### ValueMetric
 
-Any ValueMetric Event that appears on the Firehose will be sent through to StatsD as a Gauge metric. This includes metrics such as numCPUS, numGoRoutines, memoryStats, etc. These metrics appear in the Graphite web UI under `Graphite.stats.gauges.<statsdPrefix>.ops.<Origin>`.
+Any ValueMetric Event that appears on the Firehose will be sent as a LongCounter metric. This includes metrics such as numCPUS, numGoRoutines, memoryStats, etc. These metrics appear in the Investigator under `Firehose|ops|<Origin>`.
 
 
 
