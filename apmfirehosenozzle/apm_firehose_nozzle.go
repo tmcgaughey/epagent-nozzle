@@ -5,9 +5,7 @@ import (
 	"github.com/tmcgaughey/epagent-nozzle/epagentclient"
 	"github.com/tmcgaughey/epagent-nozzle/nozzleconfig"
 	"github.com/cloudfoundry/noaa"
-	"github.com/cloudfoundry/noaa/events"  //"github.com/cloudfoundry/sonde-go/events"
-	//"github.com/gorilla/websocket"
-	//"github.com/pivotal-golang/localip"
+	"github.com/cloudfoundry/noaa/events"
 	"log"
 	"time"
 )
@@ -50,7 +48,7 @@ func (d *APMFirehoseNozzle) Start() {
 
 func (d *APMFirehoseNozzle) createClient() {
 
-	d.client = epagentclient.New(d.config.EPAgentURL); //, d.config.MetricPrefix, d.config.Deployment, ipAddress)
+	d.client = epagentclient.New(d.config.EPAgentURL); 
 }
 
 func (d *APMFirehoseNozzle) consumeFirehose(authToken string) {

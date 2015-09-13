@@ -17,8 +17,6 @@ type NozzleConfig struct {
 	EPAgentURL             string
 	FlushDurationSeconds   uint32
 	InsecureSSLSkipVerify  bool
-	MetricPrefix           string
-	Deployment             string
 	DisableAccessControl   bool
 }
 
@@ -40,8 +38,6 @@ func Parse(configPath string) (*NozzleConfig, error) {
 	overrideWithEnvVar("NOZZLE_TRAFFICCONTROLLERURL", &config.TrafficControllerURL)
 	overrideWithEnvVar("NOZZLE_FIREHOSESUBSCRIPTIONID", &config.FirehoseSubscriptionID)
 	overrideWithEnvVar("NOZZLE_EPAGENTURL", &config.EPAgentURL)
-	overrideWithEnvVar("NOZZLE_METRICPREFIX", &config.MetricPrefix)
-	overrideWithEnvVar("NOZZLE_DEPLOYMENT", &config.Deployment)
 
 	overrideWithEnvUint32("NOZZLE_FLUSHDURATIONSECONDS", &config.FlushDurationSeconds)
 

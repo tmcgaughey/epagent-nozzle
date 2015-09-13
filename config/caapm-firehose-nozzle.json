@@ -7,7 +7,5 @@
   "EPAgentURL": "http://192.168.1.15:9191/apm/metricFeed",
   "FlushDurationSeconds": 15,
   "InsecureSSLSkipVerify": true,
-  "MetricPrefix": "caapmclient",
-  "Deployment": "deployment-name",
   "DisableAccessControl": false
 }

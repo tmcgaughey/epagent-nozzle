@@ -1,5 +1,8 @@
 package uaatokenfetcher
 
+// Stolen from https://github.com/cloudfoundry-incubator/datadog-firehose-nozzle
+// Just copied to simplify godeps
+
 import (
 	"github.com/cloudfoundry-incubator/uaago"
 	"log"

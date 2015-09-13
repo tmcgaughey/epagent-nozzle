@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-//	"time"
-
 	"strings"
 	"strconv"
-	//"errors"
-	"github.com/cloudfoundry/noaa/events" //"github.com/cloudfoundry/sonde-go/events"
 	"log"
 	"io/ioutil"
+
+    "github.com/cloudfoundry/noaa/events"
     "github.com/tmcgaughey/epagent-nozzle/metrics"
     "github.com/tmcgaughey/epagent-nozzle/processors"
 )
@@ -20,34 +18,27 @@ import (
 const slowConsumer = "slowConsumerAlert" 
 
 type Client struct {
-	apiURL                string
-	metricPoints          map[string]metrics.WMetric
-//	prefix                string
-//	deployment            string
-//	ip                    string
-	totalMessagesReceived int64
-	totalMetricsSent      int64
-	httpStartStopProcessor *processors.HttpStartStopProcessor
-	valueMetricProcessor  *processors.ValueMetricProcessor
-	containerMetricProcessor *processors.ContainerMetricProcessor
-	heartbeatProcessor *processors.HeartbeatProcessor
-	counterProcessor *processors.CounterProcessor
+	apiURL                		string
+	metricPoints          		map[string]metrics.WMetric
+	totalMessagesReceived 		int64
+	totalMetricsSent      		int64
+	httpStartStopProcessor 		*processors.HttpStartStopProcessor
+	valueMetricProcessor 		*processors.ValueMetricProcessor
+	containerMetricProcessor 	*processors.ContainerMetricProcessor
+	heartbeatProcessor 			*processors.HeartbeatProcessor
+	counterProcessor 			*processors.CounterProcessor
 }
 
 
-func New(apiURL string) *Client { //, apiKey string, prefix string, deployment string, ip string) *Client {
+func New(apiURL string) *Client { 
 	return &Client{
-		apiURL:       apiURL,
-//		apiKey:       apiKey,
-		metricPoints: make(map[string]metrics.WMetric),
-//		prefix:       prefix,
-//		deployment:   deployment,
-//		ip:           ip,
-		httpStartStopProcessor : processors.NewHttpStartStopProcessor(),
-		valueMetricProcessor : processors.NewValueMetricProcessor(),
-		containerMetricProcessor : processors.NewContainerMetricProcessor(),
-		heartbeatProcessor : processors.NewHeartbeatProcessor(),
-		counterProcessor : processors.NewCounterProcessor(),
+		apiURL:       				apiURL,
+		metricPoints: 				make(map[string]metrics.WMetric),
+		httpStartStopProcessor: 	processors.NewHttpStartStopProcessor(),
+		valueMetricProcessor: 		processors.NewValueMetricProcessor(),
+		containerMetricProcessor: 	processors.NewContainerMetricProcessor(),
+		heartbeatProcessor: 		processors.NewHeartbeatProcessor(),
+		counterProcessor: 			processors.NewCounterProcessor(),
 	}
 }
 
@@ -62,8 +53,8 @@ func (c *Client) AddMetric(envelope *events.Envelope) {
 	processedMetrics := []metrics.WMetric{}
 
 	// epagent-nozzle can handle CounterEvent, ContainerMetric, Heartbeat,
-		// HttpStartStop and ValueMetric events
-		switch eventType {
+	// HttpStartStop and ValueMetric events
+	switch eventType {
 		case events.Envelope_ContainerMetric:
 			processedMetrics = c.containerMetricProcessor.Process(envelope)
 		case events.Envelope_CounterEvent:
@@ -76,26 +67,26 @@ func (c *Client) AddMetric(envelope *events.Envelope) {
 			processedMetrics = c.valueMetricProcessor.Process(envelope)
 		default:
 			// do nothing
-		}
+	}
 
-			if len(processedMetrics) > 0 {
-				for _, metric := range processedMetrics {
-					if metric.Type == "PerintervalCounter" {
-						_,ok := c.metricPoints[metric.Name]
-						if ok {
-							//log.Println("incrementing counter")
-							oldmetric := c.metricPoints[metric.Name]
-							oldint,_ := strconv.ParseInt(oldmetric.Value,10,64)
-							newint,_ := strconv.ParseInt(metric.Value,10,64)
-							newint = oldint + newint
-							
-							metric.Value = strconv.FormatInt(newint,10)
-						}
-					}
-					c.metricPoints[metric.Name] = metric
-					//log.Printf("metric: %s:::%s\n", metric.Name, metric.Value)
+	if len(processedMetrics) > 0 {
+		for _, metric := range processedMetrics {
+			if metric.Type == "PerintervalCounter" {
+				_,ok := c.metricPoints[metric.Name]
+				if ok {
+					//log.Println("incrementing counter")
+					oldmetric := c.metricPoints[metric.Name]
+					oldint,_ := strconv.ParseInt(oldmetric.Value,10,64)
+					newint,_ := strconv.ParseInt(metric.Value,10,64)
+					newint = oldint + newint
+					
+					metric.Value = strconv.FormatInt(newint,10)
 				}
 			}
+			c.metricPoints[metric.Name] = metric
+			//log.Printf("metric: %s:::%s\n", metric.Name, metric.Value)
+		}
+	}
 
 }
 
@@ -108,8 +99,8 @@ func (c *Client) PostMetrics() error {
 	seriesBytes, metricsCount := c.formatMetrics()
     
     //fmt.Println(string(seriesBytes[:]))
-
     //log.Print(c.apiURL)
+
 	req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(seriesBytes))
 	req.Header.Set("Content-Type", "application/json")
 	

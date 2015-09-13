@@ -1,17 +1,36 @@
-## Summary
-[![Build Status](https://travis-ci.org/cloudfoundry-incubator/datadog-firehose-nozzle.svg?branch=master)](https://travis-ci.org/cloudfoundry-incubator/datadog-firehose-nozzle) [![Coverage Status](https://coveralls.io/repos/cloudfoundry-incubator/datadog-firehose-nozzle/badge.svg)](https://coveralls.io/r/cloudfoundry-incubator/datadog-firehose-nozzle)
+# epagent-nozzle (1.0)
 
-The datadog-firehose-nozzle is a CF component which forwards metrics from the Loggregator Firehose to [Datadog](http://www.datadoghq.com/)
 
-### Configure CloudFoundry UAA for Firehose Nozzle
+# Description
+Creates a Nozzle for the [Cloud Foundry Firehose](https://github.com/cloudfoundry/loggregator) and reports metrics to the CA APM EPAgent REST interface. 
 
-The datadog firehose nozzle requires a UAA user who is authorized to access the loggregator firehose. You can add a user by editing your CloudFoundry manifest to include the details about this user under the properties.uaa.clients section. For example to add a user `datadog-firehose-nozzle`:
+## APM version
+This has been tested with APM 10.  An EPAgent 9.7.1 or greater is required for the REST interface.
+
+## Supported third party versions
+Tested with Cloud Foundry 215
+
+## Limitations
+Handles the [dropsonde-protocol events](https://github.com/cloudfoundry/dropsonde-protocol/tree/master/events) except for Log.
+By nature, the Firehose may generate a lot of metrics.  CA suggestes monitoring the load at the Enterprise Manager.
+If the nozzle is unable to keep up with the Firehose, a message is posted to the log and the metric `Firehose|slowConsumerAlert` will be non-zero.  Try scaling up the resources for the nozzle.
+
+## License
+[Apache License, Version 2.0, January 2004](http://www.apache.org/licenses/). See [Licensing](https://communities.ca.com/docs/DOC-231150910#license) on the CA APM Developer Community.
+
+
+# Installation Instructions
+Follow the steps below in prerequisites, installation, configuration, and usage to get up and running with nginx metrics today!
+
+
+* A user who has access to the Cloud Foundry Firehose configured in
+your manifest
 
 ```
 properties:
   uaa:
     clients:
-      datadog-firehose-nozzle:
+      epagent-nozzle:
         access-token-validity: 1209600
         authorized-grant-types: authorization_code,client_credentials,refresh_token
         override: true
@@ -20,87 +39,181 @@ properties:
         authorities: oauth.login,doppler.firehose
 ```
 
-### Running
+* A CA APM EPAgent 
+* Golang installed and configured (see [here](https://golang.org/doc/install) for a tutorial on how to do this).
+* godep (see [here](https://github.com/tools/godep) for installation instructions).
 
-The datadog nozzle uses a configuration file to obtain the firehose URL, datadog API key and other configuration parameters. The firehose and the datadog servers both require authentication -- the firehose requires a valid username/password and datadog requires a valid API key.
-
-You can start the firehose nozzle by executing:
-```
-go run main.go -config config/datadog-firehose-nozzle.json"
-```
-
-### Batching
-
-The configuration file specifies the interval at which the nozzle will flush metrics to datadog. By default this is set to 15 seconds.
-
-### `slowConsumerAlert`
-For the most part, the datadog-firehose-nozzle forwards metrics from the loggregator firehose to datadog without too much processing. A notable exception is the `datadog.nozzle.slowConsumerAlert` metric. The metric is a binary value (0 or 1) indicating whether or not the nozzle is forwarding metrics to datadog at the same rate that it is receiving them from the firehose: `0` means the the nozzle is keeping up with the firehose, and `1` means that the nozzle is falling behind.
-
-The nozzle determines the value of `datadog.nozzle.slowConsumerAlert` with the following rules:
-
-1. **When the nozzle receives a `TruncatingBuffer.DroppedMessages` metric, it publishes the value `1`.** The metric indicates that Doppler determined that the client (in this case, the nozzle) could not consume messages as quickly as the firehose was sending them, so it dropped messages from its queue of messages to send.
-
-2. **When the nozzle receives a websocket Close frame with status `1008`, it publishes the value `1`.** Traffic Controller pings clients to determine if the connections are still alive. If it does not receive a Pong response before the KeepAlive deadline, it decides that the connection is too slow (or even dead) and sends the Close frame.
-
-3. **Otherwise, the nozzle publishes `0`.**
-
-
-
-### Tests
-
-You need [ginkgo](http://onsi.github.io/ginkgo/) to run the tests. The tests can be executed by:
-```
-ginkgo -r
+Once you've met all the prerequisites, you'll need to download the library and install the dependencies:
 
 ```
-
-## Deploying
-
-### [Bosh](http://bosh.io)
-
-There is a bosh release that will configure, start and monitor the datadog nozzle:
-[https://github.com/cloudfoundry-incubator/datadog-firehose-nozzle-release](https://github.com/cloudfoundry-incubator/datadog-firehose-nozzle-release
-)
-
-### [Lattice](http://lattice.cf)
-
-There is a docker image which can be used to deploy the datadog nozzle to lattice.
-If you are running lattice locally with Vagrant, you can use the following command
-line to start the nozzle:
-
-```bash
-ltc create datadog-nozzle cloudfoundry/datadog-nozzle-lattice \
-  -e NOZZLE_DATADOGAPIKEY=<API KEY> \
-  -e NOZZLE_METRICPREFIX=<METRIC PREFIX>  --no-monitor
+mkdir -p $GOPATH/src/github.com/cloudcredo
+cd $GOPATH/src/github.com/cloudcredo
+git clone git@github.com:CloudCredo/graphite-nozzle.git
+cd graphite-nozzle
+godep restore
+godep go build
 ```
 
-The `API KEY` is your datadog API key used to publish metrics. The `METRIC PREFIX` gets prepended to all metric names
-going through the nozzle.
+Finally, run the app:
 
-The docker image runs the nozzle with the config provided in [`lattice/lattice-datadog-firehose-nozzle.json`](https://github.com/cloudfoundry-incubator/datadog-firehose-nozzle/blob/master/lattice/lattice-datadog-firehose-nozzle.json).
-If you are not running lattice locally you will have to also configure the traffic controller URL
-
-```bash
-ltc create datadog-nozzle cloudfoundry/datadog-nozzle-lattice \
-  -e NOZZLE_DATADOGAPIKEY=<API KEY> \
-  -e NOZZLE_METRIC_PREFIX=<METRIC PREFIX> \
-  -e NOZZLE_TRAFFICCONTROLLERURL=<TRAFFICONTROLLER URL>
+```
+./graphite-nozzle --help
 ```
 
-Any of the configuration parameters can be overloaded by using environment variables. The following
-parameters are supported
 
-| Environment variable          | Description            |
-|-------------------------------|------------------------|
-| NOZZLE_UAAURL                 | UAA URL which the nozzle uses to get an authentication token for the firehose |
-| NOZZLE_USERNAME               | User who has access to the firehose |
-| NOZZLE_PASSWORD               | Password for the user |
-| NOZZLE_TRAFFICCONTROLLERURL   | Loggregator's traffic controller URL |
-| NOZZLE_FIREHOSESUBSCRIPTIONID | Subscription ID used when connecting to the firehose. Nozzles with the same subscription ID get a proportional share of the firehose |
-| NOZZLE_DATADOGURL             | The Datadog API URL |
-| NOZZLE_DATADOGAPIKEY          | The API key used when publishing metrics to datadog |
-| NOZZLE_METRICPREFIX           | The metric prefix is prepended to all metrics flowing through the nozzle |
-| NOZZLE_DEPLOYMENT             | The deployment name for the nozzle. Used for tagging metrics internal to the nozzle |
-| NOZZLE_FLUSHDURATIONSECONDS   | Number of seconds to buffer data before publishing to Datadog |
-| NOZZLE_INSECURESSLSKIPVERIFY  | If true, allows insecure connections to the UAA and the Trafficcontroller |
-| NOZZLE_DISABLEACCESSCONTROL   | If true, disables authentication with the UAA. Used in lattice deployments |
+
+
+
+
+
+## Prerequisites
+Ensure that nginx has the `--with-http_stub_status_module` flag by executing:
+
+    nginx -V
+The flag should appear in the output.
+
+Using the value of the `--conf-path` flag in the output, identify your active [nginx config file](http://nginx.org/en/docs/beginners_guide.html#conf_structure).
+
+A status URL location must be enabled under your server block.  An example is provided below:
+
+    
+      #add to existing server block
+   
+       location /nginx_status {
+           # activate stub_status module
+           stub_status on;
+   
+           # do not log status polling
+           access_log off;
+   
+           # restrict access to local only
+           allow 127.0.0.1;
+           deny all;
+      }
+If you test the URL, the expected output should look similar to the following:
+
+    Active connections: 1
+    server accepts handled requests
+    112 112 121
+    Reading: 0 Writing: 1 Waiting: 0
+
+A [RESTful CA APM EPAgent](https://wiki.ca.com/display/APMDEVOPS97/EPAgent+Overview) must be installed and the [HTTP port must be set](https://wiki.ca.com/display/APMDEVOPS97/Configure+the+EPAgent+RESTful+Interface).  The host and port running the EPAgent should be reachable from the epagent-monitor.
+
+## Dependencies
+APM EPAgent 9.7.1+
+
+## Installation
+Copy the **index.js** and **param.json** files to a convenient location.
+
+From there, execute:
+
+    npm install request
+
+## Configuration
+Edit the **config/caapm-firehose-nozzle.json** file to designate:
+
+ - The status URL specified in the prerequisites 
+ - The interval at which to poll that URL  
+ - The host and port the CA APM EPAgent is using for HTTP
+
+Here is a sample **param.json** file with nginx and the EPAgent both running on the localhost:
+
+    {
+    	"pollInterval" : 1000,
+    	"url" : "http://127.0.0.1/nginx_status",
+    	"epahost" : "127.0.0.1",
+    	"epaport" : 9191
+    }
+
+
+# Usage Instructions
+From the installation location, execute the fieldpack with:
+
+    node index
+Output will appear on the console, and hopefully the Introscope Investigator as well!
+
+## Metric description
+Reports the following metrics for requests:
+
+    nginx|hostname:Average Requests per Connection 
+    nginx|hostname:Requests per Interval
+
+plus the following metrics for connections: 
+
+    nginx|hostname|Connections:Active
+    nginx|hostname|Connections:Idle
+    nginx|hostname|Connections:Reading Request
+    nginx|hostname|Connections:Writing Response
+    nginx|hostname|Connections:Handled Connections
+    nginx|hostname|Connections:Dropped Connections
+    
+    
+## Metrics Overview
+
+Following is a brief overview of the metrics that epagent-nozzle will extract from the Firehose and send off to CA APM.
+
+### CounterEvent
+
+CounterEvents represent the increment of a counter. epagent-nozzle will send these Long Counter metric. These metrics appear in the Investigator under `Firehose|ops|<counterName>`.
+
+### ContainerMetric
+
+CPU, RAM and disk usage metrics for app containers will be sent through to StatsD as a Gauge metric. Note that ContainerMetric Events will not appear on the Firehose by default (at the moment) so you'll need to run a separate app to generate these. There is a sample ContainerMetric-generating app included in the noaa repository [here](https://github.com/cloudfoundry/noaa/tree/master/container_metrics_sample). These metrics appear in the Graphite Web UI under `Graphite.stats.gauges.<statsdPrefix>.apps.<appID>.<containerMetric>.<instanceIndex>`.
+
+### Heartbeat
+
+Heartbeat Events indicate liveness of the emitter and provide counts of the number of Events processed by the emitter. These metrics get sent through to StatsD as Gauge metrics. graphite-nozzle also increments a Counter metric for each component whenever a Heartbeat Event is received. These metrics appear in the Graphite Web UI under `Graphite.stats.gauges.<statsdPrefix>.ops.<Origin>.heartbeats.*`.
+
+### HTTPStartStop
+
+HTTP requests passing through the Cloud Foundry routers get recorded as HTTPStartStop Events. graphite-nozzle takes these events and extracts useful information, such as the response time and status code. These metrics are then sent through to StatsD. The following table gives an overview of the HTTP metrics graphite-nozzle handles:
+
+| Name | Description | StatsD Metric Type |
+| ---- | ----------- | ------------------ |
+| HttpStartStopResponseTime | HTTP response times in milliseconds | Timer |
+| HttpStartStopStatusCodeCount | A count of each HTTP status code | Counter |
+
+
+For all HTTPStartStop Events, the hostname is extracted from the URI and used in the Metric name. `.` characters are also replaced with `_` characters. This means that, for example, HTTP requests to `http://api.mycf.com/v2/info` will be recorded under `http://api_mycf_com` in the Graphite web UI. This is to avoid polluting the UI with hundreds of endpoints.
+
+Also note that 2 HTTPStartStop Events are generated per HTTP request to an application running in Cloud Foundry. graphite-nozzle will only increment the StatusCode counter for the HttpStartStop Events where `PeerType` == `PeerType_Client`. This is in order to accurately graph the incoming HTTP requests.
+
+### ValueMetric
+
+Any ValueMetric Event that appears on the Firehose will be sent through to StatsD as a Gauge metric. This includes metrics such as numCPUS, numGoRoutines, memoryStats, etc. These metrics appear in the Graphite web UI under `Graphite.stats.gauges.<statsdPrefix>.ops.<Origin>`.
+
+
+
+## Custom Management Modules
+None provided.
+
+## Custom type viewers
+None provided.
+
+## Name Formatter Replacements
+None provided.
+
+## Debugging and Troubleshooting
+The log output will indicate if the nozzle is unable to connect to the Firehose, or send to the EPAgent.  Metric issues at the EPAgent are also logged.  
+
+## Support
+This document and associated tools are made available from CA Technologies as examples and provided at no charge as a courtesy to the CA APM Community at large. This resource may require modification for use in your environment. However, please note that this resource is not supported by CA Technologies, and inclusion in this site should not be construed to be an endorsement or recommendation by CA Technologies. These utilities are not covered by the CA Technologies software license agreement and there is no explicit or implied warranty from CA Technologies. They can be used and distributed freely amongst the CA APM Community, but not sold. As such, they are unsupported software, provided as is without warranty of any kind, express or implied, including but not limited to warranties of merchantability and fitness for a particular purpose. CA Technologies does not warrant that this resource will meet your requirements or that the operation of the resource will be uninterrupted or error free or that any defects will be corrected. The use of this resource implies that you understand and agree to the terms listed herein.
+
+Although these utilities are unsupported, please let us know if you have any problems or questions by adding a comment to the CA APM Community Site area where the resource is located, so that the Author(s) may attempt to address the issue or question.
+
+Unless explicitly stated otherwise this field pack is only supported on the same platforms as the APM core agent. See [APM Compatibility Guide](http://www.ca.com/us/support/ca-support-online/product-content/status/compatibility-matrix/application-performance-management-compatibility-guide.aspx).
+
+
+# Contributing
+The [CA APM Community](https://communities.ca.com/community/ca-apm) is the primary means of interfacing with other users and with the CA APM product team.  The [developer subcommunity](https://communities.ca.com/community/ca-apm/ca-developer-apm) is where you can learn more about building APM-based assets, find code examples, and ask questions of other developers and the CA APM product team.
+
+If you wish to contribute to this or any other project, please refer to [easy instructions](https://communities.ca.com/docs/DOC-231150910) available on the CA APM Developer Community.
+
+
+# Change log
+Changes for each version of the field pack.
+
+Version | Author | Comment
+--------|--------|--------
+1.0 | Tim McGaughey | First version of the field pack.
+>>>>>>> 5435727... added Godeps
