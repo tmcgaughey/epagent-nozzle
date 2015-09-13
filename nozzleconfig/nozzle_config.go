@@ -14,8 +14,7 @@ type NozzleConfig struct {
 	Password               string
 	TrafficControllerURL   string
 	FirehoseSubscriptionID string
-	DataDogURL             string
-	DataDogAPIKey          string
+	EPAgentURL             string
 	FlushDurationSeconds   uint32
 	InsecureSSLSkipVerify  bool
 	MetricPrefix           string
@@ -40,8 +39,7 @@ func Parse(configPath string) (*NozzleConfig, error) {
 	overrideWithEnvVar("NOZZLE_PASSWORD", &config.Password)
 	overrideWithEnvVar("NOZZLE_TRAFFICCONTROLLERURL", &config.TrafficControllerURL)
 	overrideWithEnvVar("NOZZLE_FIREHOSESUBSCRIPTIONID", &config.FirehoseSubscriptionID)
-	overrideWithEnvVar("NOZZLE_DATADOGURL", &config.DataDogURL)
-	overrideWithEnvVar("NOZZLE_DATADOGAPIKEY", &config.DataDogAPIKey)
+	overrideWithEnvVar("NOZZLE_EPAGENTURL", &config.EPAgentURL)
 	overrideWithEnvVar("NOZZLE_METRICPREFIX", &config.MetricPrefix)
 	overrideWithEnvVar("NOZZLE_DEPLOYMENT", &config.Deployment)
 

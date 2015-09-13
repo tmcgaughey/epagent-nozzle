@@ -22,7 +22,7 @@ type MetricFeed struct {
 
 const EPAgent = "http://192.168.1.23:9191/apm/metricFeed"
 
-func main() {
+func main1() {
 	
 	fmt.Println("URL:>",EPAgent)
 	

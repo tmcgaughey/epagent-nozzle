@@ -5,7 +5,7 @@ import (
 	"github.com/cloudfoundry-incubator/datadog-firehose-nozzle/datadogclient"
 	"github.com/cloudfoundry-incubator/datadog-firehose-nozzle/nozzleconfig"
 	"github.com/cloudfoundry/noaa"
-	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/cloudfoundry/noaa/events"
 	"github.com/gorilla/websocket"
 	"github.com/pivotal-golang/localip"
 	"log"

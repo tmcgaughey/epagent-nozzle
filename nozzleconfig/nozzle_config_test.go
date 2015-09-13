@@ -1,7 +1,7 @@
 package nozzleconfig_test
 
 import (
-	"github.com/cloudfoundry-incubator/datadog-firehose-nozzle/nozzleconfig"
+	"github.com/tmcgaughey/epagent-nozzle/nozzleconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"os"
@@ -13,13 +13,12 @@ var _ = Describe("NozzleConfig", func() {
 	})
 
 	It("successfully parses a valid config", func() {
-		conf, err := nozzleconfig.Parse("../config/datadog-firehose-nozzle.json")
+		conf, err := nozzleconfig.Parse("../config/caapm-firehose-nozzle.json")
 		Expect(err).ToNot(HaveOccurred())
 		Expect(conf.UAAURL).To(Equal("https://uaa.walnut.cf-app.com"))
 		Expect(conf.Username).To(Equal("user"))
 		Expect(conf.Password).To(Equal("user_password"))
-		Expect(conf.DataDogURL).To(Equal("https://app.datadoghq.com/api/v1/series"))
-		Expect(conf.DataDogAPIKey).To(Equal("<enter api key>"))
+		Expect(conf.EPAgentURL).To(Equal("https://app.datadoghq.com/api/v1/series"))
 		Expect(conf.FlushDurationSeconds).To(BeEquivalentTo(15))
 		Expect(conf.InsecureSSLSkipVerify).To(Equal(true))
 		Expect(conf.MetricPrefix).To(Equal("datadogclient"))
@@ -31,8 +30,7 @@ var _ = Describe("NozzleConfig", func() {
 		os.Setenv("NOZZLE_UAAURL", "https://uaa.walnut-env.cf-app.com")
 		os.Setenv("NOZZLE_USERNAME", "env-user")
 		os.Setenv("NOZZLE_PASSWORD", "env-user-password")
-		os.Setenv("NOZZLE_DATADOGURL", "https://app.datadoghq-env.com/api/v1/series")
-		os.Setenv("NOZZLE_DATADOGAPIKEY", "envapi-key>")
+		os.Setenv("NOZZLE_EPAGENTURL", "https://app.datadoghq-env.com/api/v1/series")
 		os.Setenv("NOZZLE_FLUSHDURATIONSECONDS", "25")
 		os.Setenv("NOZZLE_INSECURESSLSKIPVERIFY", "false")
 		os.Setenv("NOZZLE_METRICPREFIX", "env-datadogclient")
@@ -44,8 +42,7 @@ var _ = Describe("NozzleConfig", func() {
 		Expect(conf.UAAURL).To(Equal("https://uaa.walnut-env.cf-app.com"))
 		Expect(conf.Username).To(Equal("env-user"))
 		Expect(conf.Password).To(Equal("env-user-password"))
-		Expect(conf.DataDogURL).To(Equal("https://app.datadoghq-env.com/api/v1/series"))
-		Expect(conf.DataDogAPIKey).To(Equal("envapi-key>"))
+		Expect(conf.EPAgentURL).To(Equal("https://app.datadoghq-env.com/api/v1/series"))
 		Expect(conf.FlushDurationSeconds).To(BeEquivalentTo(25))
 		Expect(conf.InsecureSSLSkipVerify).To(Equal(false))
 		Expect(conf.MetricPrefix).To(Equal("env-datadogclient"))
