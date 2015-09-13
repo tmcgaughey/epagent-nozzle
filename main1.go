@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"encoding/json"
+	"strings"
 )
 
 type WMetric struct {
@@ -28,6 +29,20 @@ func main1() {
 	
 	metriclist := new (MetricFeed)
 	wmetrics := []WMetric{}
+	
+	mVal := WMetric{Type: "LongCounter", Name: "totalMetricsSent", Value: "0"}
+	
+	mVal.Name = "Firehose." + mVal.Name
+		str := strings.Replace(mVal.Name, ".","|",-1)
+		fmt.Println("str: " + str)
+		idx := strings.LastIndexAny(str,"|")
+		//fmt.Println("idx: " +idx)
+		substring := str[idx:len(str)]
+		fmt.Println("substring: " + substring)
+		revsubstring := ":"+substring[1:len(substring)]
+		fmt.Println("revsubstring: " + revsubstring)
+		mVal.Name = strings.Replace(str, substring, revsubstring, -1)
+		fmt.Printf("metric: %s\tvalue: %s", mVal.Name, mVal.Value)
 	
 	wmetrics = append(wmetrics, WMetric{
 			Type: "StringEvent", 

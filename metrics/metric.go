@@ -1,100 +1,69 @@
 package metrics
 
-import "time"
+//CA APM (Wily) Metrics
 
-type StatsdClient interface {
-	Gauge(stat string, value int64) error
-	FGauge(stat string, value float64) error
-	Incr(stat string, count int64) error
-	Timing(string, int64) error
-	PrecisionTiming(stat string, delta time.Duration) error
+import (
+	"strconv"
+	)
+
+
+type WMetric struct {
+	Type string `json:"type"`
+	Name string `json:"name"`
+	Value string `json:"value"`
 }
 
-type Metric interface {
-	Send(StatsdClient) error
+type MetricFeed struct {
+	Metrics []WMetric `json:"metrics"`
 }
 
-type CounterMetric struct {
-	Stat  string
-	Value int64
+//Useful for metric such as miles per hour or errors per interval.
+//Resets to zero at each new interval.
+func NewPerintervalCounterMetric(stat string, value int32) *WMetric {
+	return &WMetric{ Type: "PerintervalCounter", Name: stat, Value: strconv.FormatInt(int64(value),10) }
 }
 
-type GaugeMetric struct {
-	Stat  string
-	Value int64
+//This is an int value that can rise or fall 
+//Useful for tally metrics, such as msgs in queue.
+//The value does not change until a new value is reported
+func NewIntCounterMetric(stat string, value int32) *WMetric {
+	return &WMetric{ Type: "IntCounter", Name: stat, Value: strconv.FormatInt(int64(value),10) }
 }
 
-type FGaugeMetric struct {
-	Stat  string
-	Value float64
+//This is an int value that is averaged over time.
+//Useful for response times, such as average time in seconds.
+//The value reports all the applicable metrics, such as in a loop and automatically performs the calculation at the end of the interval.
+func NewIntAverageMetric(stat string, value int32) *WMetric {
+	return &WMetric{ Type: "IntAverage", Name: stat, Value: strconv.FormatInt(int64(value),10) }
 }
 
-type TimingMetric struct {
-	Stat  string
-	Value int64
+//The value is a per second rate
+//These metrics are aggregated over time from an average of the value
+func NewIntRateMetric(stat string, value int32) *WMetric {
+	return &WMetric{ Type: "IntRate", Name: stat, Value: strconv.FormatInt(int64(value),10) }
 }
 
-type PrecisionTimingMetric struct {
-	Stat  string
-	Value time.Duration
+//This is a long value that can rise or fall 
+//Useful for tally metrics, such as msgs in queue.
+//The value does not change until a new value is reported
+func NewLongCounterMetric(stat string, value int64) *WMetric {
+	return &WMetric{ Type: "LongCounter", Name: stat, Value: strconv.FormatInt(value,10) }
 }
 
-func NewCounterMetric(stat string, value int64) *CounterMetric {
-	return &CounterMetric{
-		Stat:  stat,
-		Value: value,
-	}
+//This is a long value that is averaged over time.
+//Useful for response times, such as average time in seconds.
+//The value reports all the applicable metrics, such as in a loop and automatically performs the calculation at the end of the interval.
+func NewLongAverageMetric(stat string, value int64) *WMetric {
+	return &WMetric{ Type: "LongAverage", Name: stat, Value: strconv.FormatInt(value,10) }
 }
 
-func NewGaugeMetric(stat string, value int64) *GaugeMetric {
-	return &GaugeMetric{
-		Stat:  stat,
-		Value: value,
-	}
+//current latest string value (not stored historically)
+func NewStringEventMetric(stat string, value string) *WMetric {
+	return &WMetric{ Type: "StringEvent", Name: stat, Value: value }
 }
 
-func NewFGaugeMetric(stat string, value float64) *FGaugeMetric {
-	return &FGaugeMetric{
-		Stat:  stat,
-		Value: value,
-	}
+//A type which generates successively increasing timestamps
+func NewTimestampMetric(stat string, value int64) *WMetric {
+	return &WMetric{ Type: "Timestamp", Name: stat, Value: strconv.FormatInt(value,10) }
 }
 
-func NewTimingMetric(stat string, value int64) *TimingMetric {
-	return &TimingMetric{
-		Stat:  stat,
-		Value: value,
-	}
-}
-
-func NewPrecisionTimingMetric(stat string, value time.Duration) *PrecisionTimingMetric {
-	return &PrecisionTimingMetric{
-		Stat:  stat,
-		Value: value,
-	}
-}
-
-func (m CounterMetric) Send(statsdClient StatsdClient) error {
-	err := statsdClient.Incr(m.Stat, m.Value)
-	return err
-}
-
-func (m GaugeMetric) Send(statsdClient StatsdClient) error {
-	err := statsdClient.Gauge(m.Stat, m.Value)
-	return err
-}
-
-func (m FGaugeMetric) Send(statsdClient StatsdClient) error {
-	err := statsdClient.FGauge(m.Stat, m.Value)
-	return err
-}
-
-func (m TimingMetric) Send(statsdClient StatsdClient) error {
-	err := statsdClient.Timing(m.Stat, m.Value)
-	return err
-}
-
-func (m PrecisionTimingMetric) Send(statsdClient StatsdClient) error {
-	err := statsdClient.PrecisionTiming(m.Stat, m.Value)
-	return err
-}

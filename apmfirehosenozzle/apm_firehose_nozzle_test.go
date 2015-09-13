@@ -1,4 +1,4 @@
-package datadogfirehosenozzle_test
+package apmfirehosenozzle_test
 
 import (
 	. "github.com/cloudfoundry-incubator/datadog-firehose-nozzle/testhelpers"

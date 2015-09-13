@@ -1,0 +1,13 @@
+{
+  "UAAURL": "https://uaa.10.244.0.34.xip.io",
+  "Username": "admin",
+  "Password": "admin-secret",
+  "TrafficControllerURL": "wss://doppler.10.244.0.34.xip.io:443",
+  "FirehoseSubscriptionID": "caapm-nozzle",
+  "EPAgentURL": "http://192.168.1.15:9191/apm/metricFeed",
+  "FlushDurationSeconds": 15,
+  "InsecureSSLSkipVerify": true,
+  "MetricPrefix": "caapmclient",
+  "Deployment": "deployment-name",
+  "DisableAccessControl": false
+}

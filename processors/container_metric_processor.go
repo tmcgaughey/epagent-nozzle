@@ -3,7 +3,7 @@ package processors
 import (
 	"strconv"
 
-	"github.com/cloudcredo/graphite-nozzle/metrics"
+	"github.com/tmcgaughey/epagent-nozzle/metrics"
 	"github.com/cloudfoundry/noaa/events"
 )
 
@@ -13,43 +13,43 @@ func NewContainerMetricProcessor() *ContainerMetricProcessor {
 	return &ContainerMetricProcessor{}
 }
 
-func (p *ContainerMetricProcessor) Process(e *events.Envelope) []metrics.Metric {
-	processedMetrics := make([]metrics.Metric, 3)
+func (p *ContainerMetricProcessor) Process(e *events.Envelope) []metrics.WMetric {
+	processedMetrics := make([]metrics.WMetric, 3)
 	containerMetricEvent := e.GetContainerMetric()
 
-	processedMetrics[0] = metrics.Metric(p.ProcessContainerMetricCPU(containerMetricEvent))
-	processedMetrics[1] = metrics.Metric(p.ProcessContainerMetricMemory(containerMetricEvent))
-	processedMetrics[2] = metrics.Metric(p.ProcessContainerMetricDisk(containerMetricEvent))
+	processedMetrics[0] = *p.ProcessContainerMetricCPU(containerMetricEvent)
+	processedMetrics[1] = *p.ProcessContainerMetricMemory(containerMetricEvent)
+	processedMetrics[2] = *p.ProcessContainerMetricDisk(containerMetricEvent)
 
 	return processedMetrics
 }
 
-func (p *ContainerMetricProcessor) ProcessContainerMetricCPU(e *events.ContainerMetric) metrics.GaugeMetric {
+func (p *ContainerMetricProcessor) ProcessContainerMetricCPU(e *events.ContainerMetric) *metrics.WMetric {
 	appID := e.GetApplicationId()
 	instanceIndex := strconv.Itoa(int(e.GetInstanceIndex()))
 
 	stat := "apps." + appID + ".cpu." + instanceIndex
-	metric := metrics.NewGaugeMetric(stat, int64(e.GetCpuPercentage()))
+	metric := metrics.NewLongCounterMetric(stat, int64(e.GetCpuPercentage()))
 
-	return *metric
+	return metric
 }
 
-func (p *ContainerMetricProcessor) ProcessContainerMetricMemory(e *events.ContainerMetric) metrics.GaugeMetric {
+func (p *ContainerMetricProcessor) ProcessContainerMetricMemory(e *events.ContainerMetric) *metrics.WMetric {
 	appID := e.GetApplicationId()
 	instanceIndex := strconv.Itoa(int(e.GetInstanceIndex()))
 
 	stat := "apps." + appID + ".memoryBytes." + instanceIndex
-	metric := metrics.NewGaugeMetric(stat, int64(e.GetMemoryBytes()))
-
-	return *metric
+	metric := metrics.NewLongCounterMetric(stat, int64(e.GetMemoryBytes()))
+	
+	return metric
 }
 
-func (p *ContainerMetricProcessor) ProcessContainerMetricDisk(e *events.ContainerMetric) metrics.GaugeMetric {
+func (p *ContainerMetricProcessor) ProcessContainerMetricDisk(e *events.ContainerMetric) *metrics.WMetric {
 	appID := e.GetApplicationId()
 	instanceIndex := strconv.Itoa(int(e.GetInstanceIndex()))
 
 	stat := "apps." + appID + ".diskBytes." + instanceIndex
-	metric := metrics.NewGaugeMetric(stat, int64(e.GetDiskBytes()))
+	metric := metrics.NewLongCounterMetric(stat, int64(e.GetDiskBytes()))
 
-	return *metric
+	return metric
 }

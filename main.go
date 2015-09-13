@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-//	"github.com/cloudfoundry-incubator/datadog-firehose-nozzle/datadogfirehosenozzle"
+	"github.com/tmcgaughey/epagent-nozzle/apmfirehosenozzle"
 	"github.com/tmcgaughey/epagent-nozzle/nozzleconfig"
 	"github.com/cloudfoundry-incubator/datadog-firehose-nozzle/uaatokenfetcher"
 	//"os"
@@ -29,9 +29,12 @@ func main() {
 		InsecureSSLSkipVerify: config.InsecureSSLSkipVerify,
 	}
 	
-	var authToken string 
-	authToken = tokenFetcher.FetchAuthToken();
-	log.Println("Authorization:", authToken)
+	//var authToken string 
+	//authToken = tokenFetcher.FetchAuthToken();
+	//log.Println("Authorization:", authToken)
+
+	apm_nozzle := apmfirehosenozzle.NewAPMFirehoseNozzle(config, tokenFetcher)
+	apm_nozzle.Start()
 
 	//threadDumpChan := registerGoRoutineDumpSignalChannel()
 	//defer close(threadDumpChan)

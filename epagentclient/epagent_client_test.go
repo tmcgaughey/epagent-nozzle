@@ -1,4 +1,4 @@
-package datadogclient_test
+package epagentclient_test
 
 import (
 	"io/ioutil"
