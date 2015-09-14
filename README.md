@@ -37,6 +37,7 @@ properties:
         secret: <password>
         scope: openid,oauth.approvals,doppler.firehose
         authorities: oauth.login,doppler.firehose
+
 ```
 
 * Golang installed and configured (see [here](https://golang.org/doc/install) for a tutorial on how to do this).
@@ -148,4 +149,3 @@ Changes for each version of the field pack.
 Version | Author | Comment
 --------|--------|--------
 1.0 | Tim McGaughey | First version of the field pack.
->>>>>>> 5435727... added Godeps
