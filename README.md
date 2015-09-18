@@ -44,9 +44,9 @@ properties:
 * godep (see [here](https://github.com/tools/godep) for installation instructions).
 
 ## Dependencies
-APM EPAgent 9.7.1+
-Golang 1.4.2 and 1.5 were tested
-Godep
+* APM EPAgent 9.7.1+
+* Golang 1.4.2 and 1.5 were tested
+* Godep
 
 ## Installation
 Once you've met all the prerequisites, you'll need to download the library and install the dependencies:
