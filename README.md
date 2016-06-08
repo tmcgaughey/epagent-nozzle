@@ -149,3 +149,12 @@ Changes for each version of the field pack.
 Version | Author | Comment
 --------|--------|--------
 1.0 | Tim McGaughey | First version of the field pack.
+
+## Support URL
+https://github.com/tmcgaughey/epagent-nozzle/issues
+
+## Short Description
+Monitors Cloud Foundry
+
+## Categories
+Cloud
