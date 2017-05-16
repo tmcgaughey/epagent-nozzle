@@ -144,7 +144,8 @@ func (c *Client) formatMetrics() ([]byte, int64) {
 	wmetrics := []metrics.WMetric{}
 	for _, mVal := range c.metricPoints {
 		mVal.Name = "Firehose." + mVal.Name
-		str := strings.Replace(mVal.Name, ".","|",-1)
+		str := strings.Replace(mVal.Name, ":", "_", -1)
+		str = strings.Replace(str, ".", "|", -1)
 		idx := strings.LastIndexAny(str,"|")
 		substring := str[idx:len(str)]
 		revsubstring := ":"+substring[1:len(substring)]
